@@ -12,7 +12,7 @@ valid = read_excel("/content/NEW_DCB6_B3.xlsx")
 xv = as.matrix(valid[3:158])
 yv = valid$DCB6
 
-set.seed(1298944)
+set.seed(1994)
 for(file in files)
 {
   data = read_excel(file)
