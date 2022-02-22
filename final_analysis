@@ -6,7 +6,7 @@ library(ROCR)
 library(tidyr)
 library(readxl)
 
-files = c("NEW_DCB6.xlsx")
+files = c("NEW_DCB6.xlsx", "NEW_LTB24.xlsx")
 
 valid = read_excel("/content/NEW_DCB6_B3.xlsx")
 xv = as.matrix(valid[3:158])
