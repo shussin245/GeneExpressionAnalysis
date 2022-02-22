@@ -1,0 +1,48 @@
+library(dplyr)
+install.packages("glmnet")
+library(glmnet)
+install.packages("ROCR")
+library(ROCR)
+library(tidyr)
+library(readxl)
+
+files = c("NEW_DCB6.xlsx")
+
+valid = read_excel("/content/NEW_DCB6_B3.xlsx")
+xv = as.matrix(valid[3:158])
+yv = valid$DCB6
+
+set.seed(1298944)
+for(file in files)
+{
+  data = read_excel(file)
+  x = as.matrix(data[3:158])
+  y = data$DCB6
+  for(al in c(0.1, 0.5, 0.8, 1))                                                                   #Creating a model for different alphas; 0=ridge, 1=lasso
+  {
+    print(file)
+    print(paste0("Alpha: ", al))
+    model = cv.glmnet(x, y, alpha=al, nlambda=1000, family="binomial", type.measure="auc", nfolds=3) #CV finds best lambda
+
+    best_lam = model$lambda.min                                                                     #Lambda that gives the lowest mean CV error
+    print(paste("Best lambda: ", best_lam))
+
+    print(paste0("AUC for CV model: ", max(model$cvm)))                                             #Because type.measure is set to "auc", the cvm value is the auc for the cross-validation
+
+    best_lam_model = glmnet(x, y, alpha=al, lambda=best_lam, family="binomial")
+
+    prob_data = predict(best_lam_model, xv, type="response")                                         #Seeing how well our model predicts the DCB6 for new gene coefficients
+    pred_data = prediction(prob_data, yv)                                                           #How accurate our predictions were
+    aucs = attr(performance(pred_data, "auc"), "y.values")[[1]]                                     #Measuring the performance of our predictions
+    formatted_auc = signif(aucs, digits=5) 
+    print(paste0("AUC for B3 validation: ", formatted_auc))
+
+    rocs = performance(pred_data, measure="tpr", x.measure="fpr")                                   #Developing roc plots using our predictions from Block 3
+
+    coefs = rownames(coef(best_lam_model))[coef(best_lam_model)[,1]!= 0]                            #Genes with nonzero coefficients
+    print(coefs)
+
+    plot(rocs)
+    abline(a=0, b=1)
+  }                                                                                                 #ROC plots are one lower than they should be
+}
